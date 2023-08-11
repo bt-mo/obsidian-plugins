@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obsidian plugins sorted</title>
+  <meta name="description" content="Obsidian community plugins sorted by download count">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.3/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="dist/main.css">
+  </head>
+<body class="bg-slate-900">
+  <div class="container pt-4 pb-10 mx-auto">
+    <h1 class="mb-8 font-mono text-lg text-violet-400">Obsidian Community Plugins</h1>
+      
+    <ul x-data="plugins" class="grid grid-cols-12 gap-4">
+      <li class="flex flex-wrap items-center justify-between py-4 max-lg:space-y-4 lg:space-x-8 col-span-full">
+        <input 
+          type="search" 
+          placeholder="Filter plugins.." 
+          class="w-full px-4 py-2 text-lg rounded-full lg:max-w-lg" 
+          x-model="query"
+          @keyup="filterPlugins()"
+        />
+        <div class="flex justify-end max-lg:w-full sm:space-x-4">
+          <button 
+            class="px-4 py-2 transition-opacity border rounded-l max-lg:flex-1 max-sm:border-r-0 sm:rounded shrink-0 bg-violet-600 text-slate-100 border-violet-400 disabled:opacity-60"
+            @click="sortByDownloads()"
+            :disabled="sortedBy == 'downloads'"
+          >Sort by downloads</button>
+          <button 
+            class="px-4 py-2 transition-opacity border rounded-r max-lg:flex-1 max-sm:border-l-0 sm:rounded shrink-0 bg-violet-600 text-slate-100 border-violet-400 disabled:opacity-60"
+            @click="sortByName()"
+            :disabled="sortedBy == 'name'"
+            >Sort by name</button>
+        </div>
+      </li>
+      <template x-if="!pluginDataFiltered">
+        <template x-for="i in 32">
+          <li class="flex flex-col col-span-12 p-4 border rounded-lg h-28 sm:col-span-6 lg:col-span-4 xl:col-span-3 bg-slate-800 border-slate-600 animate-pulse"></li>
+        </template>
+      </template>
+      <template x-if="pluginDataFiltered">
+        <template x-for="plugin in pluginDataFiltered">
+          <li class="flex flex-col col-span-12 p-4 border rounded-lg sm:col-span-6 lg:col-span-4 xl:col-span-3 bg-slate-800 border-slate-600">
+            <strong x-text="plugin.name" class="text-lg text-gray-200"></strong>
+            <span x-text="'By ' + plugin.author" class="text-sm text-gray-400"></span>
+            <p x-text="plugin.description" class="mt-2 text-gray-200"></p>
+            <div class="flex items-end justify-between pt-3 mt-auto">
+              <span x-text="new Intl.NumberFormat().format(plugin.downloads)" class="mt-auto text-gray-400"></span>
+              <a :href="'https://github.com/' + plugin.repo" class="underline text-violet-400">GitHub</a>
+            </div>
+          </li>
+        </template>
+      </template>
+    </ul>
+
+  </div>
+    
+  <script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('plugins',() => ({
+          communityPluginsUrl: 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/community-plugins.json',
+          communityPluginsStatsUrl: 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/community-plugin-stats.json',
+          communityPluginsArray: null,
+          communityPluginsStatsJson: null,
+          pluginData: null,
+          pluginDataFiltered: null,
+          sortedBy: null,
+          query: '',
+
+          filterPlugins() {
+            if (this.query.trim() == '') {
+              this.pluginDataFiltered = this.pluginData;
+              return;
+            }
+            
+            this.pluginDataFiltered = this.pluginData.filter((plugin) => {
+              return (plugin.id.toLowerCase().includes(this.query.toLowerCase()) ||
+                plugin.name.toLowerCase().includes(this.query.toLowerCase()) ||
+                plugin.description.toLowerCase().includes(this.query.toLowerCase()) ||
+                plugin.repo.toLowerCase().includes(this.query.toLowerCase()))
+            })
+          },
+
+          sortByDownloads() {
+            this.pluginDataFiltered.sort((a, b) => b.downloads - a.downloads);
+            this.sortedBy = 'downloads';
+          },
+
+          sortByName() {
+            this.pluginDataFiltered.sort((a, b) => {
+              const nameA = a.name.toUpperCase();
+              const nameB = b.name.toUpperCase();
+              if (nameA < nameB) {
+                return -1;
+              }
+              if (nameA > nameB) {
+                return 1;
+              }
+
+              // names must be equal
+              return 0;
+            });
+            this.sortedBy = 'name';
+          },
+  
+          init() {
+            const fetchPromise1 = fetch(this.communityPluginsUrl)
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error(`Network response was not ok. Status: ${response.status}`);
+                }
+                return response.json();
+              })
+              .then(data => {
+                this.communityPluginsArray = data;
+                return data; // Return the data to be used in Promise.all()
+              });
+  
+            // Fetch data from the second URL
+            const fetchPromise2 = fetch(this.communityPluginsStatsUrl)
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error(`Network response was not ok. Status: ${response.status}`);
+                }
+                return response.json();
+              })
+              .then(data => {
+                this.communityPluginsStatsJson = data;
+                return data; // Return the data to be used in Promise.all()
+              });
+  
+            // Combine responses and use them in a function
+            Promise.all([fetchPromise1, fetchPromise2])
+              .then(responses => {
+                const combinedResponses = {
+                  communityPluginsArray: this.communityPluginsArray,
+                  communityPluginsStatsJson: this.communityPluginsStatsJson
+                };
+                // Call your function with the combined data
+                this.processCombinedData(combinedResponses);
+              })
+              .catch(error => {
+                console.error('Fetch error:', error);
+              });
+  
+            // Function to process the combined data
+            
+          },
+
+          processCombinedData(combinedResponses) {
+            
+            this.pluginData = combinedResponses.communityPluginsArray.map(item => ({
+              ...item,
+              downloads: combinedResponses.communityPluginsStatsJson[item.id] ? combinedResponses.communityPluginsStatsJson[item.id].downloads  : 0
+            }));
+
+            this.pluginDataFiltered = this.pluginData;
+  
+            this.sortByDownloads();
+          }
+        }))
+    })
+  
+  </script>
+</body>
+</html>

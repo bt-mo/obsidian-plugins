@@ -1,0 +1,17 @@
+{
+  "name": "obsidianplugins",
+  "version": "1.0.0",
+  "description": "Obsidian plugins sorted by downloads",
+  "main": "index.html",
+  "dependencies": {},
+  "devDependencies": {
+    "tailwindcss": "^3.3.3"
+  },
+  "scripts": {
+    "watch": "npx tailwindcss -i ./src/main.css -o ./dist/main.css --watch",
+    "build": "npx tailwindcss -i ./src/main.css -o ./dist/main.css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
