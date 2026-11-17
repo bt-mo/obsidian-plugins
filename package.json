@@ -5,7 +5,7 @@
   "main": "index.html",
   "dependencies": {},
   "devDependencies": {
-    "tailwindcss": "^3.3.3"
+    "tailwindcss": "^4.3.5"
   },
   "scripts": {
     "watch": "npx tailwindcss -i ./src/main.css -o ./dist/main.css --watch",
